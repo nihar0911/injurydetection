@@ -1,0 +1,13 @@
+{
+  "name": "AthletiShield AI",
+  "description": "Smart AI-powered sports injury triage, visual assessment, and personalized recovery planner for athletes.",
+  "requestFramePermissions": [
+    "camera",
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "AI Visual Assessment",
+    "Interactive Body Mapping",
+    "Dynamic Recovery Planning"
+  ]
+}

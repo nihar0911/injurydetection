@@ -1,0 +1,67 @@
+{
+  "entities": {
+    "Profile": {
+      "title": "User Profile",
+      "description": "Athlete profile details for personalized triage and recovery.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "displayName": { "type": "string" },
+        "sports": { "type": "array", "items": { "type": "string" } },
+        "pastInjuries": { "type": "string" },
+        "weight": { "type": "number" },
+        "height": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "tier": { "type": "string", "enum": ["free", "pro"] },
+        "scansCount": { "type": "number" },
+        "lastScanReset": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "displayName"]
+    },
+    "Injury": {
+      "title": "Injury Report",
+      "description": "Details of a recorded sports injury.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "area": { "type": "string" },
+        "symptoms": { "type": "array", "items": { "type": "string" } },
+        "visualSigns": { "type": "array", "items": { "type": "string" } },
+        "triageResult": { "type": "object" },
+        "bp": { "type": "string" },
+        "spo2": { "type": "number" },
+        "emergencyEscalated": { "type": "boolean" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "area", "timestamp"]
+    },
+    "RecoveryPlan": {
+      "title": "Recovery Plan",
+      "description": "Day-by-day recovery actions and prevention tips.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "injuryId": { "type": "string" },
+        "startDate": { "type": "string", "format": "date-time" },
+        "planSteps": { "type": "array" },
+        "preventionTips": { "type": "array", "items": { "type": "string" } },
+        "status": { "type": "string", "enum": ["active", "completed"] }
+      },
+      "required": ["userId", "injuryId", "startDate"]
+    }
+  },
+  "firestore": {
+    "profiles/{userId}": {
+      "schema": "Profile",
+      "description": "User profiles indexed by UID."
+    },
+    "injuries/{injuryId}": {
+      "schema": "Injury",
+      "description": "Injury reports recorded by users."
+    },
+    "recoveryPlans/{planId}": {
+      "schema": "RecoveryPlan",
+      "description": "Recovery plans for specific injuries."
+    }
+  }
+}

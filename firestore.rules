@@ -1,0 +1,75 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helpers ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // --- Entity Validations ---
+
+    function isValidProfile(data) {
+      return data.userId == request.auth.uid &&
+             data.displayName is string && data.displayName.size() > 0 &&
+             data.displayName.size() <= 100 &&
+             (data.tier == 'free' || data.tier == 'pro') &&
+             data.scansCount is number;
+    }
+
+    function isValidInjury(data) {
+      return data.userId == request.auth.uid &&
+             data.area is string &&
+             (data.timestamp == request.time || data.timestamp is timestamp);
+    }
+
+    function isValidRecoveryPlan(data) {
+      return data.userId == request.auth.uid &&
+             data.injuryId is string &&
+             (data.startDate == request.time || data.startDate is timestamp);
+    }
+
+    // --- Collection Rules ---
+
+    match /profiles/{userId} {
+      allow get: if isSignedIn(); // Allow reading any profile metadata for social or sharing if needed, but restrict listing
+      allow create, update: if isOwner(userId) && isValidProfile(incoming());
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    match /injuries/{injuryId} {
+      allow get: if isOwner(existing().userId);
+      allow create: if isSignedIn() && isValidInjury(incoming());
+      allow update: if isOwner(existing().userId) && isValidInjury(incoming());
+      allow delete: if isOwner(existing().userId);
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    match /recoveryPlans/{planId} {
+      allow get: if isOwner(existing().userId);
+      allow create: if isSignedIn() && isValidRecoveryPlan(incoming());
+      allow update: if isOwner(existing().userId) && isValidRecoveryPlan(incoming());
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+  }
+}
