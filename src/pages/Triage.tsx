@@ -16,9 +16,10 @@ interface TriageProps {
   selectedPart: BodyPart;
   onBack: () => void;
   onPlanGenerated: (plan: RecoveryPlan) => void;
+  onCallAmbulance: () => void;
 }
 
-const Triage: React.FC<TriageProps> = ({ selectedPart, onBack, onPlanGenerated }) => {
+const Triage: React.FC<TriageProps> = ({ selectedPart, onBack, onPlanGenerated, onCallAmbulance }) => {
   const { profile, user, refreshProfile } = useAuth();
   const [showUpgrade, setShowUpgrade] = useState(false);
   const [step, setStep] = useState<'symptoms' | 'followup' | 'vitals' | 'scan' | 'analyzing' | 'result'>('symptoms');
@@ -338,6 +339,7 @@ const Triage: React.FC<TriageProps> = ({ selectedPart, onBack, onPlanGenerated }
               onBack();
             }
           }} 
+          onCallAmbulance={onCallAmbulance}
         />
       )}
 

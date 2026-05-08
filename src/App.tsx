@@ -11,13 +11,14 @@ import Onboarding from './pages/Onboarding';
 import Home from './pages/Home';
 import Triage from './pages/Triage';
 import Recovery from './pages/Recovery';
+import AmbulanceTracker from './pages/AmbulanceTracker';
 import UpgradeModal from './components/UpgradeModal';
 import { BodyPart, RecoveryPlan } from './types';
 import { motion, AnimatePresence } from 'motion/react';
 
 const AppContent = () => {
   const { user, profile, loading } = useAuth();
-  const [view, setView] = useState<'home' | 'triage' | 'recovery'>('home');
+  const [view, setView] = useState<'home' | 'triage' | 'recovery' | 'ambulance'>('home');
   const [selectedPart, setSelectedPart] = useState<BodyPart | null>(null);
   const [activePlan, setActivePlan] = useState<RecoveryPlan | null>(null);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
@@ -88,6 +89,7 @@ const AppContent = () => {
                   setView('home');
                 }
               }}
+              onCallAmbulance={() => setView('ambulance')}
             />
           </motion.div>
         )}
@@ -104,6 +106,18 @@ const AppContent = () => {
               plan={activePlan} 
               onBack={() => setView('home')} 
             />
+          </motion.div>
+        )}
+
+        {view === 'ambulance' && (
+          <motion.div
+            key="ambulance"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 1.05 }}
+            transition={{ duration: 0.3 }}
+          >
+            <AmbulanceTracker onBack={() => setView('home')} />
           </motion.div>
         )}
       </AnimatePresence>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShieldAlert, CheckCircle, Activity, ChevronRight, AlertTriangle, Crosshair, Scan } from 'lucide-react';
+import { ShieldAlert, CheckCircle, Activity, ChevronRight, AlertTriangle, Crosshair, Scan, PhoneCall } from 'lucide-react';
 import { motion } from 'motion/react';
 
 interface TriageResultProps {
@@ -15,9 +15,10 @@ interface TriageResultProps {
     aiModelImage?: string;
   };
   onProceed: () => void;
+  onCallAmbulance: () => void;
 }
 
-const TriageResult: React.FC<TriageResultProps> = ({ result, onProceed }) => {
+const TriageResult: React.FC<TriageResultProps> = ({ result, onProceed, onCallAmbulance }) => {
   const isEmergency = result.riskLevel === 'emergency';
 
   const riskColors = {
@@ -146,16 +147,30 @@ const TriageResult: React.FC<TriageResultProps> = ({ result, onProceed }) => {
         </div>
       </div>
 
-      <button 
-        onClick={onProceed}
-        className={`w-full py-5 rounded-2xl font-bold italic tracking-tighter uppercase text-xl transition-all shadow-2xl flex items-center justify-center gap-3 ${
-          isEmergency 
-            ? 'bg-red-500 text-white hover:bg-red-400 shadow-red-500/30' 
-            : 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-indigo-600/30'
-        }`}
-      >
-        {isEmergency ? 'Acknowledge Emergency' : 'Generate Recovery Plan'} <ChevronRight className="w-6 h-6" />
-      </button>
+      <div className="flex flex-col sm:flex-row gap-4">
+        <button 
+          onClick={onProceed}
+          className={`flex-1 py-5 rounded-2xl font-bold italic tracking-tighter uppercase text-xl transition-all shadow-2xl flex items-center justify-center gap-3 ${
+            isEmergency 
+              ? 'bg-slate-800 text-white hover:bg-slate-700 shadow-slate-900/30' 
+              : 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-indigo-600/30'
+          }`}
+        >
+          {isEmergency ? 'Dismiss' : 'Generate Recovery Plan'} <ChevronRight className="w-6 h-6" />
+        </button>
+
+        {(isEmergency || result.riskLevel === 'high') && (
+          <button 
+            onClick={() => {
+              window.location.href = 'tel:108';
+              onCallAmbulance();
+            }}
+            className="flex-1 py-5 bg-red-600 hover:bg-red-500 text-white rounded-2xl font-black italic tracking-tighter uppercase text-xl transition-all shadow-[0_0_30px_rgba(220,38,38,0.4)] hover:shadow-[0_0_50px_rgba(220,38,38,0.6)] flex items-center justify-center gap-3 animate-pulse"
+          >
+            <PhoneCall className="w-6 h-6" /> Call Ambulance (108)
+          </button>
+        )}
+      </div>
     </div>
   );
 };

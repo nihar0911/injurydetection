@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Camera, Info, CheckCircle2, AlertTriangle, Scan, Play } from 'lucide-react';
+import { Camera, Info, CheckCircle2, AlertTriangle, Scan, Play, Monitor, Image as ImageIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Pose, POSE_CONNECTIONS } from '@mediapipe/pose';
 import { Camera as MediaPipeCamera } from '@mediapipe/camera_utils';
@@ -281,6 +281,69 @@ const VisualScan: React.FC<VisualScanProps> = ({ onComplete }) => {
     reader.readAsDataURL(file);
   };
 
+  const handleScreenshotCapture = async () => {
+    try {
+      const displayStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+      const videoElement = document.createElement('video');
+      videoElement.srcObject = displayStream;
+      videoElement.play();
+
+      videoElement.onloadeddata = () => {
+        setTimeout(() => {
+          setIsValidating(true);
+          
+          if (!canvasRef.current) {
+             displayStream.getTracks().forEach(t => t.stop());
+             return;
+          }
+
+          setIsValidating(false);
+          setIsAnalyzingOverlay(true);
+          
+          setTimeout(() => {
+            setIsAnalyzingOverlay(false);
+
+            const canvas = canvasRef.current!;
+            const context = canvas.getContext('2d');
+            if (!context) return;
+
+            const MAX_WIDTH = 768;
+            let width = videoElement.videoWidth;
+            let height = videoElement.videoHeight;
+
+            if (width > MAX_WIDTH) {
+              height = Math.round((MAX_WIDTH / width) * height);
+              width = MAX_WIDTH;
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            context.drawImage(videoElement, 0, 0, width, height);
+            
+            displayStream.getTracks().forEach(t => t.stop());
+
+            const imageData = context.getImageData(0, 0, width, height);
+            const features = processImageFeatures(imageData);
+
+            drawHeatmapOverlay(context, width, height, features);
+
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+            const aiModelDataUrl = generateAIModelImage(canvas, width, height, features);
+
+            onComplete({
+              images: [dataUrl],
+              aiModelImage: aiModelDataUrl,
+              features,
+              minJointAngle: null
+            });
+          }, 1500);
+        }, 500); // Small delay to let the screen render first frame
+      };
+    } catch (err) {
+      console.error("Error capturing screenshot:", err);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-xl p-4 flex gap-3 items-start">
@@ -313,7 +376,14 @@ const VisualScan: React.FC<VisualScanProps> = ({ onComplete }) => {
               onClick={() => fileInputRef.current?.click()}
               className="px-8 py-3 bg-slate-800 text-slate-200 border border-slate-700 rounded-full font-bold hover:bg-slate-700 transition-all shadow-lg flex items-center gap-2"
             >
-              Upload Photo from Gallery
+              <ImageIcon className="w-5 h-5" /> Upload Photo from Gallery
+            </button>
+            
+            <button 
+              onClick={handleScreenshotCapture}
+              className="px-8 py-3 bg-slate-800 text-slate-200 border border-slate-700 rounded-full font-bold hover:bg-slate-700 transition-all shadow-lg flex items-center gap-2"
+            >
+              <Monitor className="w-5 h-5" /> Capture Screenshot
             </button>
             
             <input 
