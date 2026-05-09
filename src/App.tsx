@@ -12,13 +12,14 @@ import Home from './pages/Home';
 import Triage from './pages/Triage';
 import Recovery from './pages/Recovery';
 import AmbulanceTracker from './pages/AmbulanceTracker';
+import ReinjuryScanner from './pages/ReinjuryScanner';
 import UpgradeModal from './components/UpgradeModal';
 import { BodyPart, RecoveryPlan } from './types';
 import { motion, AnimatePresence } from 'motion/react';
 
 const AppContent = () => {
   const { user, profile, loading } = useAuth();
-  const [view, setView] = useState<'home' | 'triage' | 'recovery' | 'ambulance'>('home');
+  const [view, setView] = useState<'home' | 'triage' | 'recovery' | 'ambulance' | 'reinjury'>('home');
   const [selectedPart, setSelectedPart] = useState<BodyPart | null>(null);
   const [activePlan, setActivePlan] = useState<RecoveryPlan | null>(null);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
@@ -63,6 +64,7 @@ const AppContent = () => {
                   setShowUpgradeModal(true);
                 }
               }}
+              onStartReinjuryScanner={() => setView('reinjury')}
             />
             <UpgradeModal isOpen={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />
           </motion.div>
@@ -118,6 +120,18 @@ const AppContent = () => {
             transition={{ duration: 0.3 }}
           >
             <AmbulanceTracker onBack={() => setView('home')} />
+          </motion.div>
+        )}
+
+        {view === 'reinjury' && (
+          <motion.div
+            key="reinjury"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 1.05 }}
+            transition={{ duration: 0.3 }}
+          >
+            <ReinjuryScanner onBack={() => setView('home')} />
           </motion.div>
         )}
       </AnimatePresence>

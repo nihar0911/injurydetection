@@ -13,9 +13,10 @@ import UpgradeModal from '../components/UpgradeModal';
 interface HomeProps {
   onStartTriage: (part: BodyPart) => void;
   onViewRecovery: (plan: RecoveryPlan) => void;
+  onStartReinjuryScanner?: () => void;
 }
 
-const Home: React.FC<HomeProps> = ({ onStartTriage, onViewRecovery }) => {
+const Home: React.FC<HomeProps> = ({ onStartTriage, onViewRecovery, onStartReinjuryScanner }) => {
   const { profile, user } = useAuth();
   const [activePlan, setActivePlan] = useState<RecoveryPlan | null>(null);
   const [loading, setLoading] = useState(true);
@@ -87,6 +88,31 @@ const Home: React.FC<HomeProps> = ({ onStartTriage, onViewRecovery }) => {
            ))}
         </div>
       </div>
+
+      {/* Universal Reinjury Scanner Banner */}
+      <motion.button
+        onClick={onStartReinjuryScanner}
+        whileHover={{ scale: 1.01 }}
+        whileTap={{ scale: 0.99 }}
+        className="w-full relative overflow-hidden bg-gradient-to-br from-indigo-900 to-slate-900 border border-indigo-500/30 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl shadow-indigo-900/20 group"
+      >
+        <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/20 rounded-full blur-3xl -mr-32 -mt-32 group-hover:bg-indigo-500/30 transition-all duration-500" />
+        <div className="relative text-left space-y-2">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 bg-indigo-500/20 rounded-xl flex items-center justify-center">
+              <Activity className="w-5 h-5 text-indigo-400" />
+            </div>
+            <span className="px-3 py-1 bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 text-xs font-black uppercase tracking-widest rounded-full">New Universal AI</span>
+          </div>
+          <h2 className="text-2xl md:text-3xl font-black italic uppercase tracking-tighter text-white">Dynamic Reinjury Prevention Scanner</h2>
+          <p className="text-indigo-200/80 font-medium max-w-xl">Deep analysis for ANY injury. AI dynamically analyzes healing status, movement quality, and predicts load tolerance capacity.</p>
+        </div>
+        <div className="relative flex-shrink-0 w-full md:w-auto">
+          <div className="w-full md:w-auto px-8 py-4 bg-indigo-600 group-hover:bg-indigo-500 text-white rounded-2xl font-black uppercase tracking-widest transition-all flex items-center justify-center gap-3">
+            Initialize Scanner <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+          </div>
+        </div>
+      </motion.button>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Left Column: Body Map Focus */}
