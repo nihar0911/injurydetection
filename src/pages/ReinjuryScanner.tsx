@@ -90,20 +90,29 @@ const COLOR_MAP: Record<string, { bg: string, text: string, border: string, shad
 
 const DEFAULT_THEME = { bg: 'from-indigo-500 to-indigo-700', text: 'text-indigo-400', border: 'border-indigo-400', shadow: 'shadow-indigo-500/40', glow: 'bg-indigo-500' };
 
-const BODY_PART_MAP: Record<string, string[]> = {
-  'Head/Neck': ['Concussion', 'Neck Injury'],
-  'Shoulder': ['Shoulder', 'Muscle Tear'],
-  'Chest': ['Fracture'],
-  'Back': ['Back Injury', 'Muscle Tear'],
-  'Arm': ['Muscle Tear'],
-  'Elbow': ['Ligament Injury'],
-  'Wrist/Hand': ['Wrist', 'Fracture'],
-  'Abdomen': ['Muscle Tear'],
-  'Hip/Pelvis': ['Hip Strain'],
-  'Thigh': ['Muscle Tear', 'Ligament Injury'],
-  'Knee': ['Knee', 'Ligament Injury'],
-  'Calf': ['Muscle Tear'],
-  'Ankle/Foot': ['Ankle', 'Fracture']
+const mapRawAreaToCategories = (area: string): string[] => {
+  const categories: string[] = [];
+  const a = area.toLowerCase();
+  
+  if (a.includes('head') || a.includes('forehead') || a.includes('eyes') || a.includes('nose') || a.includes('jaw') || a.includes('neck')) {
+    categories.push('Concussion', 'Neck Injury');
+  }
+  if (a.includes('shoulder')) categories.push('Shoulder', 'Muscle Tear');
+  if (a.includes('chest') || a.includes('ribs')) categories.push('Fracture');
+  if (a.includes('abdomen')) categories.push('Muscle Tear');
+  if (a.includes('back') || a.includes('spine')) categories.push('Back Injury', 'Muscle Tear');
+  if (a.includes('arm') || a.includes('tricep')) categories.push('Muscle Tear');
+  if (a.includes('elbow')) categories.push('Ligament Injury');
+  if (a.includes('wrist') || a.includes('hand') || a.includes('finger')) categories.push('Wrist', 'Fracture');
+  if (a.includes('hip') || a.includes('groin') || a.includes('glute')) categories.push('Hip Strain');
+  if (a.includes('thigh') || a.includes('hamstring')) categories.push('Muscle Tear', 'Ligament Injury');
+  if (a.includes('knee')) categories.push('Knee', 'Ligament Injury');
+  if (a.includes('shin') || a.includes('calf')) categories.push('Muscle Tear', 'Fracture');
+  if (a.includes('ankle') || a.includes('foot') || a.includes('toe') || a.includes('achilles') || a.includes('heel')) {
+    categories.push('Ankle', 'Fracture');
+  }
+  
+  return categories;
 };
 
 export default function ReinjuryScanner({ onBack }: { onBack: () => void }) {
@@ -122,10 +131,10 @@ export default function ReinjuryScanner({ onBack }: { onBack: () => void }) {
         const mapped = new Set<string>();
         snapshot.forEach(doc => {
           const area = doc.data().area;
-          if (BODY_PART_MAP[area]) {
-            BODY_PART_MAP[area].forEach(p => mapped.add(p));
+          const categories = mapRawAreaToCategories(area);
+          if (categories.length > 0) {
+            categories.forEach(c => mapped.add(c));
           } else {
-            // fallback
             mapped.add(area);
           }
         });
