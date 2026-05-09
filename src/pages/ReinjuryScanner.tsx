@@ -90,29 +90,24 @@ const COLOR_MAP: Record<string, { bg: string, text: string, border: string, shad
 
 const DEFAULT_THEME = { bg: 'from-indigo-500 to-indigo-700', text: 'text-indigo-400', border: 'border-indigo-400', shadow: 'shadow-indigo-500/40', glow: 'bg-indigo-500' };
 
-const mapRawAreaToCategories = (area: string): string[] => {
-  const categories: string[] = [];
+const mapRawAreaToCategories = (area: string, diagnosis?: string): string[] => {
   const a = area.toLowerCase();
+  const d = (diagnosis || '').toLowerCase();
   
-  if (a.includes('head') || a.includes('forehead') || a.includes('eyes') || a.includes('nose') || a.includes('jaw') || a.includes('neck')) {
-    categories.push('Concussion', 'Neck Injury');
-  }
-  if (a.includes('shoulder')) categories.push('Shoulder', 'Muscle Tear');
-  if (a.includes('chest') || a.includes('ribs')) categories.push('Fracture');
-  if (a.includes('abdomen')) categories.push('Muscle Tear');
-  if (a.includes('back') || a.includes('spine')) categories.push('Back Injury', 'Muscle Tear');
-  if (a.includes('arm') || a.includes('tricep')) categories.push('Muscle Tear');
-  if (a.includes('elbow')) categories.push('Ligament Injury');
-  if (a.includes('wrist') || a.includes('hand') || a.includes('finger')) categories.push('Wrist', 'Fracture');
-  if (a.includes('hip') || a.includes('groin') || a.includes('glute')) categories.push('Hip Strain');
-  if (a.includes('thigh') || a.includes('hamstring')) categories.push('Muscle Tear', 'Ligament Injury');
-  if (a.includes('knee')) categories.push('Knee', 'Ligament Injury');
-  if (a.includes('shin') || a.includes('calf')) categories.push('Muscle Tear', 'Fracture');
-  if (a.includes('ankle') || a.includes('foot') || a.includes('toe') || a.includes('achilles') || a.includes('heel')) {
-    categories.push('Ankle', 'Fracture');
-  }
+  if (a.includes('head') || a.includes('forehead') || a.includes('eyes') || a.includes('nose') || a.includes('jaw')) return ['Concussion'];
+  if (a.includes('neck')) return ['Neck Injury'];
+  if (a.includes('shoulder')) return ['Shoulder'];
+  if (a.includes('chest') || a.includes('ribs')) return ['Fracture'];
+  if (a.includes('back') || a.includes('spine')) return ['Back Injury'];
+  if (a.includes('elbow')) return ['Ligament Injury'];
+  if (a.includes('wrist') || a.includes('hand') || a.includes('finger')) return ['Wrist'];
+  if (a.includes('hip') || a.includes('groin') || a.includes('glute')) return ['Hip Strain'];
+  if (a.includes('knee')) return ['Knee'];
+  if (a.includes('ankle') || a.includes('foot') || a.includes('toe') || a.includes('achilles') || a.includes('heel')) return ['Ankle'];
   
-  return categories;
+  if (d.includes('fracture') || d.includes('severe')) return ['Fracture'];
+  if (d.includes('sprain') || d.includes('strain') || d.includes('ligament')) return ['Ligament Injury'];
+  return ['Muscle Tear'];
 };
 
 export default function ReinjuryScanner({ onBack }: { onBack: () => void }) {
@@ -130,8 +125,10 @@ export default function ReinjuryScanner({ onBack }: { onBack: () => void }) {
         const snapshot = await getDocs(q);
         const mapped = new Set<string>();
         snapshot.forEach(doc => {
-          const area = doc.data().area;
-          const categories = mapRawAreaToCategories(area);
+          const data = doc.data();
+          const area = data.area;
+          const diagnosis = data.triageResult?.diagnosis;
+          const categories = mapRawAreaToCategories(area, diagnosis);
           if (categories.length > 0) {
             categories.forEach(c => mapped.add(c));
           } else {
