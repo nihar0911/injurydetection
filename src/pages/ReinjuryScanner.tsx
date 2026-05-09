@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Activity, ShieldAlert, ArrowLeft, Brain, Scan, ActivitySquare, ChevronRight, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useAuth } from '../context/AuthContext';
+import { db } from '../lib/firebase';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 
 const UNIVERSAL_INJURY_DATA: Record<string, any> = {
   'Knee': {
@@ -87,9 +90,55 @@ const COLOR_MAP: Record<string, { bg: string, text: string, border: string, shad
 
 const DEFAULT_THEME = { bg: 'from-indigo-500 to-indigo-700', text: 'text-indigo-400', border: 'border-indigo-400', shadow: 'shadow-indigo-500/40', glow: 'bg-indigo-500' };
 
+const BODY_PART_MAP: Record<string, string[]> = {
+  'Head/Neck': ['Concussion', 'Neck Injury'],
+  'Shoulder': ['Shoulder', 'Muscle Tear'],
+  'Chest': ['Fracture'],
+  'Back': ['Back Injury', 'Muscle Tear'],
+  'Arm': ['Muscle Tear'],
+  'Elbow': ['Ligament Injury'],
+  'Wrist/Hand': ['Wrist', 'Fracture'],
+  'Abdomen': ['Muscle Tear'],
+  'Hip/Pelvis': ['Hip Strain'],
+  'Thigh': ['Muscle Tear', 'Ligament Injury'],
+  'Knee': ['Knee', 'Ligament Injury'],
+  'Calf': ['Muscle Tear'],
+  'Ankle/Foot': ['Ankle', 'Fracture']
+};
+
 export default function ReinjuryScanner({ onBack }: { onBack: () => void }) {
+  const { user } = useAuth();
   const [phase, setPhase] = useState<'setup' | 'scanning' | 'results'>('setup');
   const [selectedBodyPart, setSelectedBodyPart] = useState<string>('');
+  const [allowedParts, setAllowedParts] = useState<string[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(true);
+
+  useEffect(() => {
+    const fetchHistory = async () => {
+      if (!user) return;
+      try {
+        const q = query(collection(db, 'injuries'), where('userId', '==', user.uid));
+        const snapshot = await getDocs(q);
+        const mapped = new Set<string>();
+        snapshot.forEach(doc => {
+          const area = doc.data().area;
+          if (BODY_PART_MAP[area]) {
+            BODY_PART_MAP[area].forEach(p => mapped.add(p));
+          } else {
+            // fallback
+            mapped.add(area);
+          }
+        });
+        // Always include Knee for hackathon safety if it's empty, or just let it be empty
+        setAllowedParts(Array.from(mapped));
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoadingHistory(false);
+      }
+    };
+    fetchHistory();
+  }, [user]);
   
   // Scanning state
   const [scanProgress, setScanProgress] = useState(0);
@@ -182,13 +231,22 @@ export default function ReinjuryScanner({ onBack }: { onBack: () => void }) {
               <div className={`absolute top-0 right-0 w-64 h-64 ${theme.glow} opacity-10 rounded-full blur-3xl -mr-32 -mt-32 transition-all duration-700`}></div>
               <Brain className={`w-16 h-16 mx-auto transition-colors duration-700 drop-shadow-[0_0_15px_currentColor] ${theme.text}`} />
               <h2 className="text-3xl font-black text-slate-100 uppercase tracking-tight drop-shadow-md">Select Injury History</h2>
-              <p className="text-slate-400 max-w-lg mx-auto relative z-10">This Universal AI does not use fixed logic. It dynamically extracts recovery metrics, load tolerances, and movement factors based entirely on the specific injury profile.</p>
+              <p className="text-slate-400 max-w-lg mx-auto relative z-10">Select an injury from your historical medical data to run a dynamic load tolerance and reinjury capacity test.</p>
             </div>
 
-            <motion.div variants={containerVariants} initial="hidden" animate="show" className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-              {Object.keys(UNIVERSAL_INJURY_DATA).map(bp => {
-                const isSelected = selectedBodyPart === bp;
-                const itemTheme = COLOR_MAP[bp] || DEFAULT_THEME;
+            {loadingHistory ? (
+              <div className="py-12 flex justify-center"><div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" /></div>
+            ) : allowedParts.length === 0 ? (
+              <div className="bg-slate-900 border border-slate-800 p-8 rounded-[2rem] text-center space-y-4">
+                <ShieldAlert className="w-12 h-12 text-slate-600 mx-auto" />
+                <h3 className="text-xl font-bold text-slate-300">No Past Injuries Found</h3>
+                <p className="text-slate-500 max-w-md mx-auto">You must complete at least one Triage Scan from the Home Dashboard before you can run a Reinjury Prevention Scan.</p>
+              </div>
+            ) : (
+              <motion.div variants={containerVariants} initial="hidden" animate="show" className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                {allowedParts.filter(bp => UNIVERSAL_INJURY_DATA[bp]).map(bp => {
+                  const isSelected = selectedBodyPart === bp;
+                  const itemTheme = COLOR_MAP[bp] || DEFAULT_THEME;
                 return (
                   <motion.button
                     variants={itemVariants}
@@ -209,6 +267,7 @@ export default function ReinjuryScanner({ onBack }: { onBack: () => void }) {
                 );
               })}
             </motion.div>
+            )}
 
             <motion.button 
               initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
