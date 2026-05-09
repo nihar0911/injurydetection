@@ -286,7 +286,7 @@ const Triage: React.FC<TriageProps> = ({ selectedPart, onBack, onPlanGenerated, 
 
       {step === 'scan' && (
         <div className="animate-in slide-in-from-right-5 duration-500">
-          <VisualScan onComplete={(data) => runAnalysis(data)} />
+          <VisualScan selectedPart={selectedPart} onComplete={(data) => runAnalysis(data)} />
         </div>
       )}
 
