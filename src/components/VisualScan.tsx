@@ -14,9 +14,10 @@ export interface ScanData {
 
 interface VisualScanProps {
   onComplete: (data: ScanData) => void;
+  selectedPart?: string;
 }
 
-const VisualScan: React.FC<VisualScanProps> = ({ onComplete }) => {
+const VisualScan: React.FC<VisualScanProps> = ({ onComplete, selectedPart }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const overlayCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -27,6 +28,10 @@ const VisualScan: React.FC<VisualScanProps> = ({ onComplete }) => {
   const [isValidating, setIsValidating] = useState(false);
   const [isAnalyzingOverlay, setIsAnalyzingOverlay] = useState(false);
   
+  // Gemini Verification State
+  const [isVerifyingAnatomy, setIsVerifyingAnatomy] = useState(false);
+  const [anatomyError, setAnatomyError] = useState<string | null>(null);
+
   // Real CV Data
   const [accumulatedFeatures, setAccumulatedFeatures] = useState<CVFeatures>({ rednessPercentage: 0, bruisePercentage: 0, swellingPercentage: 0 });
   const [minJointAngle, setMinJointAngle] = useState<number | null>(null);
@@ -161,6 +166,7 @@ const VisualScan: React.FC<VisualScanProps> = ({ onComplete }) => {
       
       if (context && video.readyState >= 2) {
         setIsValidating(true);
+        setAnatomyError(null);
 
         setTimeout(() => {
           setIsValidating(false);
@@ -198,24 +204,50 @@ const VisualScan: React.FC<VisualScanProps> = ({ onComplete }) => {
 
             const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
             const aiModelDataUrl = generateAIModelImage(canvas, width, height, features);
-            const newImages = [...capturedImages, dataUrl];
-            setCapturedImages(newImages);
             
-            if (currentStep < steps.length - 1) {
-              setCurrentStep(currentStep + 1);
-            } else {
-              stopCamera();
-              onComplete({
-                images: newImages,
-                aiModelImage: aiModelDataUrl,
-                features: {
-                  rednessPercentage: Math.max(accumulatedFeatures.rednessPercentage, features.rednessPercentage),
-                  bruisePercentage: Math.max(accumulatedFeatures.bruisePercentage, features.bruisePercentage),
-                  swellingPercentage: Math.max(accumulatedFeatures.swellingPercentage, features.swellingPercentage)
-                },
-                minJointAngle
-              });
-            }
+            // --- GEMINI ANATOMY VERIFICATION ---
+            const verifyAndProceed = async () => {
+              if (selectedPart) {
+                setIsValidating(false);
+                setIsVerifyingAnatomy(true);
+                try {
+                  const { verifyAnatomy } = await import('../lib/gemini');
+                  const formattedPart = selectedPart.replace(/_/g, ' ');
+                  const result = await verifyAnatomy(dataUrl, formattedPart);
+                  
+                  if (!result.match) {
+                    setIsVerifyingAnatomy(false);
+                    setAnatomyError(`Mismatch Detected: You selected '${formattedPart}', but the AI detected something else. Reason: ${result.reason}`);
+                    return; // Halt process
+                  }
+                } catch (err: any) {
+                  console.error(err);
+                  // Allow fallback if it fails or key is missing
+                }
+                setIsVerifyingAnatomy(false);
+              }
+              
+              const newImages = [...capturedImages, dataUrl];
+              setCapturedImages(newImages);
+              
+              if (currentStep < steps.length - 1) {
+                setCurrentStep(currentStep + 1);
+              } else {
+                stopCamera();
+                onComplete({
+                  images: newImages,
+                  aiModelImage: aiModelDataUrl,
+                  features: {
+                    rednessPercentage: Math.max(accumulatedFeatures.rednessPercentage, features.rednessPercentage),
+                    bruisePercentage: Math.max(accumulatedFeatures.bruisePercentage, features.bruisePercentage),
+                    swellingPercentage: Math.max(accumulatedFeatures.swellingPercentage, features.swellingPercentage)
+                  },
+                  minJointAngle
+                });
+              }
+            };
+
+            verifyAndProceed();
           }, 1500); 
         }, 1000); 
       }
@@ -229,6 +261,7 @@ const VisualScan: React.FC<VisualScanProps> = ({ onComplete }) => {
     if (!file || !canvasRef.current) return;
 
     setIsValidating(true);
+    setAnatomyError(null);
 
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -267,13 +300,37 @@ const VisualScan: React.FC<VisualScanProps> = ({ onComplete }) => {
           const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
           const aiModelDataUrl = generateAIModelImage(canvas, width, height, features);
 
-          // Immediately complete triage based on static image
-          onComplete({
-            images: [dataUrl],
-            aiModelImage: aiModelDataUrl,
-            features,
-            minJointAngle: null // No motion in static images
-          });
+          // --- GEMINI ANATOMY VERIFICATION ---
+          const verifyAndProceed = async () => {
+            if (selectedPart) {
+              setIsVerifyingAnatomy(true);
+              try {
+                const { verifyAnatomy } = await import('../lib/gemini');
+                const formattedPart = selectedPart.replace(/_/g, ' ');
+                const result = await verifyAnatomy(dataUrl, formattedPart);
+                
+                if (!result.match) {
+                  setIsVerifyingAnatomy(false);
+                  setAnatomyError(`Mismatch Detected: You selected '${formattedPart}', but the AI detected something else. Reason: ${result.reason}`);
+                  return; // Halt process
+                }
+              } catch (err: any) {
+                console.error(err);
+                // Allow fallback if it fails
+              }
+              setIsVerifyingAnatomy(false);
+            }
+
+            // Immediately complete triage based on static image
+            onComplete({
+              images: [dataUrl],
+              aiModelImage: aiModelDataUrl,
+              features,
+              minJointAngle: null // No motion in static images
+            });
+          };
+
+          verifyAndProceed();
         }, 1500);
       };
       img.src = e.target?.result as string;
@@ -291,6 +348,7 @@ const VisualScan: React.FC<VisualScanProps> = ({ onComplete }) => {
       videoElement.onloadeddata = () => {
         setTimeout(() => {
           setIsValidating(true);
+          setAnatomyError(null);
           
           if (!canvasRef.current) {
              displayStream.getTracks().forEach(t => t.stop());
@@ -330,12 +388,35 @@ const VisualScan: React.FC<VisualScanProps> = ({ onComplete }) => {
             const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
             const aiModelDataUrl = generateAIModelImage(canvas, width, height, features);
 
-            onComplete({
-              images: [dataUrl],
-              aiModelImage: aiModelDataUrl,
-              features,
-              minJointAngle: null
-            });
+            // --- GEMINI ANATOMY VERIFICATION ---
+            const verifyAndProceed = async () => {
+              if (selectedPart) {
+                setIsVerifyingAnatomy(true);
+                try {
+                  const { verifyAnatomy } = await import('../lib/gemini');
+                  const formattedPart = selectedPart.replace(/_/g, ' ');
+                  const result = await verifyAnatomy(dataUrl, formattedPart);
+                  
+                  if (!result.match) {
+                    setIsVerifyingAnatomy(false);
+                    setAnatomyError(`Mismatch Detected: You selected '${formattedPart}', but the AI detected something else. Reason: ${result.reason}`);
+                    return; // Halt process
+                  }
+                } catch (err: any) {
+                  console.error(err);
+                }
+                setIsVerifyingAnatomy(false);
+              }
+
+              onComplete({
+                images: [dataUrl],
+                aiModelImage: aiModelDataUrl,
+                features,
+                minJointAngle: null
+              });
+            };
+
+            verifyAndProceed();
           }, 1500);
         }, 500); // Small delay to let the screen render first frame
       };
@@ -352,6 +433,21 @@ const VisualScan: React.FC<VisualScanProps> = ({ onComplete }) => {
           {steps[currentStep].instructions}
         </p>
       </div>
+
+      <AnimatePresence>
+        {anatomyError && (
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+            className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 flex gap-3 items-start shadow-lg shadow-red-500/10"
+          >
+            <AlertTriangle className="text-red-400 w-5 h-5 flex-shrink-0 mt-0.5" />
+            <div className="space-y-1">
+               <p className="text-sm text-red-200 font-bold">Image Verification Failed</p>
+               <p className="text-sm text-red-300/80 font-medium leading-relaxed">{anatomyError}</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="relative aspect-video rounded-3xl bg-slate-950 overflow-hidden shadow-2xl border border-slate-800">
         {!isCameraActive ? (
@@ -407,14 +503,16 @@ const VisualScan: React.FC<VisualScanProps> = ({ onComplete }) => {
 
             {/* Validation State Overlay */}
             <AnimatePresence>
-              {isValidating && (
+              {(isValidating || isVerifyingAnatomy) && (
                 <motion.div 
                   initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                  className="absolute inset-0 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm"
+                  className="absolute inset-0 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm z-20"
                 >
                   <div className="flex flex-col items-center gap-3">
                     <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-                    <span className="mono-label !text-indigo-300 shadow-xl">Running OpenCV Process...</span>
+                    <span className="mono-label !text-indigo-300 shadow-xl">
+                      {isVerifyingAnatomy ? "Verifying Anatomy via Google AI..." : "Running OpenCV Process..."}
+                    </span>
                   </div>
                 </motion.div>
               )}
@@ -434,8 +532,8 @@ const VisualScan: React.FC<VisualScanProps> = ({ onComplete }) => {
             </AnimatePresence>
             
             {/* Controls */}
-            {!isValidating && !isAnalyzingOverlay && (
-              <div className="absolute bottom-6 left-0 right-0 flex flex-col items-center gap-4">
+            {!isValidating && !isAnalyzingOverlay && !isVerifyingAnatomy && (
+              <div className="absolute bottom-6 left-0 right-0 flex flex-col items-center gap-4 z-30">
                 <button 
                   onClick={captureImage}
                   className={`w-20 h-20 bg-slate-950/50 backdrop-blur-md rounded-full border-4 ${currentStep === 3 ? 'border-emerald-500' : 'border-indigo-500'} flex items-center justify-center shadow-2xl active:scale-95 transition-all`}
