@@ -15,13 +15,16 @@ export const verifyAnatomy = async (imageBase64: string, expectedPart: string): 
     const base64Data = imageBase64.split(',')[1];
     const mimeType = imageBase64.split(';')[0].split(':')[1] || "image/jpeg";
     
+    // Strip left/right and exact modifiers so AI isn't overly strict
+    const basePart = expectedPart.replace(/\b(left|right|upper|lower|back)\b/gi, '').trim() || expectedPart;
+    
     const response = await ai.models.generateContent({
       model: "gemini-1.5-flash",
       contents: [
         {
           role: 'user',
           parts: [
-            { text: `You are an anatomical verification AI. The user claims this is a photo of a '${expectedPart}'. Carefully analyze the image. Does this image clearly show a human ${expectedPart}? Return a JSON object with 'match' (boolean) and 'reason' (string explaining why it is or isn't a ${expectedPart}). If it's completely unrelated (e.g. a face when expecting a knee, or a hand when expecting a foot), return false.` },
+            { text: `You are an anatomical verification AI. The user claims this is a photo of their '${basePart}'. Carefully analyze the image. Does this image show a human ${basePart}? Return a JSON object with 'match' (boolean) and 'reason' (string). Be highly forgiving about angles, lighting, clothing, or left vs right sides—as long as it is broadly the correct anatomical region (e.g., if they claim 'knee' and you see a knee or leg, return true). Only return false if it is completely and obviously unrelated (e.g., showing a face when expecting an ankle, or a hand when expecting a torso).` },
             {
               inlineData: {
                 data: base64Data,
