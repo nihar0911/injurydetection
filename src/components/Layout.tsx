@@ -5,9 +5,11 @@ import { auth } from '../lib/firebase';
 import { motion, AnimatePresence } from 'motion/react';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, profile } = useAuth();
+  const { user, profile, logout } = useAuth();
 
-  const handleLogout = () => auth.signOut();
+  const handleLogout = async () => {
+    await logout();
+  };
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans">

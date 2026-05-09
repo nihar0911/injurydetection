@@ -11,6 +11,7 @@ interface AuthContextType {
   loading: boolean;
   refreshProfile: () => Promise<void>;
   enableDemoMode: () => void;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -35,6 +36,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       scansCount: 0 
     });
     setLoading(false);
+  };
+
+  const logout = async () => {
+    if (isDemo) {
+      sessionStorage.removeItem('demo_mode');
+      setIsDemo(false);
+      setUser(null);
+      setProfile(null);
+    } else {
+      await auth.signOut();
+    }
   };
 
   const refreshProfile = async () => {
@@ -85,7 +97,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [isDemo]);
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, refreshProfile, enableDemoMode }}>
+    <AuthContext.Provider value={{ user, profile, loading, refreshProfile, enableDemoMode, logout }}>
       {children}
     </AuthContext.Provider>
   );

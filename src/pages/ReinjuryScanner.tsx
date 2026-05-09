@@ -71,6 +71,22 @@ const UNIVERSAL_INJURY_DATA: Record<string, any> = {
   }
 };
 
+const COLOR_MAP: Record<string, { bg: string, text: string, border: string, shadow: string, glow: string }> = {
+  'Knee': { bg: 'from-emerald-500 to-emerald-700', text: 'text-emerald-400', border: 'border-emerald-400', shadow: 'shadow-emerald-500/40', glow: 'bg-emerald-500' },
+  'Ankle': { bg: 'from-amber-500 to-amber-700', text: 'text-amber-400', border: 'border-amber-400', shadow: 'shadow-amber-500/40', glow: 'bg-amber-500' },
+  'Shoulder': { bg: 'from-cyan-500 to-cyan-700', text: 'text-cyan-400', border: 'border-cyan-400', shadow: 'shadow-cyan-500/40', glow: 'bg-cyan-500' },
+  'Wrist': { bg: 'from-pink-500 to-pink-700', text: 'text-pink-400', border: 'border-pink-400', shadow: 'shadow-pink-500/40', glow: 'bg-pink-500' },
+  'Concussion': { bg: 'from-purple-500 to-purple-700', text: 'text-purple-400', border: 'border-purple-400', shadow: 'shadow-purple-500/40', glow: 'bg-purple-500' },
+  'Back Injury': { bg: 'from-rose-500 to-rose-700', text: 'text-rose-400', border: 'border-rose-400', shadow: 'shadow-rose-500/40', glow: 'bg-rose-500' },
+  'Muscle Tear': { bg: 'from-red-500 to-red-700', text: 'text-red-400', border: 'border-red-400', shadow: 'shadow-red-500/40', glow: 'bg-red-500' },
+  'Fracture': { bg: 'from-violet-500 to-violet-700', text: 'text-violet-400', border: 'border-violet-400', shadow: 'shadow-violet-500/40', glow: 'bg-violet-500' },
+  'Ligament Injury': { bg: 'from-fuchsia-500 to-fuchsia-700', text: 'text-fuchsia-400', border: 'border-fuchsia-400', shadow: 'shadow-fuchsia-500/40', glow: 'bg-fuchsia-500' },
+  'Hip Strain': { bg: 'from-teal-500 to-teal-700', text: 'text-teal-400', border: 'border-teal-400', shadow: 'shadow-teal-500/40', glow: 'bg-teal-500' },
+  'Neck Injury': { bg: 'from-indigo-500 to-indigo-700', text: 'text-indigo-400', border: 'border-indigo-400', shadow: 'shadow-indigo-500/40', glow: 'bg-indigo-500' }
+};
+
+const DEFAULT_THEME = { bg: 'from-indigo-500 to-indigo-700', text: 'text-indigo-400', border: 'border-indigo-400', shadow: 'shadow-indigo-500/40', glow: 'bg-indigo-500' };
+
 export default function ReinjuryScanner({ onBack }: { onBack: () => void }) {
   const [phase, setPhase] = useState<'setup' | 'scanning' | 'results'>('setup');
   const [selectedBodyPart, setSelectedBodyPart] = useState<string>('');
@@ -129,18 +145,29 @@ export default function ReinjuryScanner({ onBack }: { onBack: () => void }) {
   };
 
   const data = UNIVERSAL_INJURY_DATA[selectedBodyPart];
+  const theme = COLOR_MAP[selectedBodyPart] || DEFAULT_THEME;
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    show: { opacity: 1, transition: { staggerChildren: 0.1 } }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
+  };
 
   return (
-    <div className="max-w-4xl mx-auto py-6 space-y-6">
+    <div className="max-w-4xl mx-auto py-6 space-y-6 transition-colors duration-1000">
       <div className="flex items-center gap-4">
         <button onClick={onBack} className="p-3 bg-slate-900 rounded-xl border border-slate-800 text-slate-400 hover:text-slate-100 transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div>
           <h1 className="text-xl font-bold tracking-tight text-slate-100">
-            Universal AI <span className="text-indigo-500 font-normal">/ Reinjury Prevention</span>
+            Universal AI <span className={`font-normal transition-colors duration-500 ${theme.text}`}>/ Reinjury Prevention</span>
           </h1>
-          <p className="mono-label !text-indigo-400">Dynamic Multi-Factor Analysis Engine</p>
+          <p className={`mono-label transition-colors duration-500 ${theme.text}`}>Dynamic Multi-Factor Analysis Engine</p>
         </div>
       </div>
 
@@ -151,36 +178,46 @@ export default function ReinjuryScanner({ onBack }: { onBack: () => void }) {
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: -20 }}
             className="space-y-8"
           >
-            <div className="bg-indigo-500/10 border border-indigo-500/20 p-6 rounded-3xl text-center space-y-3">
-              <Brain className="w-12 h-12 text-indigo-400 mx-auto" />
-              <h2 className="text-2xl font-black text-slate-100 uppercase tracking-tight">Select Injury History</h2>
-              <p className="text-slate-400 max-w-lg mx-auto">This Universal AI does not use fixed logic. It dynamically extracts recovery metrics, load tolerances, and movement factors based entirely on the specific injury profile.</p>
+            <div className={`bg-gradient-to-br from-slate-800 to-slate-900 border border-t-slate-700 border-b-black p-8 rounded-[2rem] text-center space-y-4 shadow-2xl relative overflow-hidden transition-all duration-700`}>
+              <div className={`absolute top-0 right-0 w-64 h-64 ${theme.glow} opacity-10 rounded-full blur-3xl -mr-32 -mt-32 transition-all duration-700`}></div>
+              <Brain className={`w-16 h-16 mx-auto transition-colors duration-700 drop-shadow-[0_0_15px_currentColor] ${theme.text}`} />
+              <h2 className="text-3xl font-black text-slate-100 uppercase tracking-tight drop-shadow-md">Select Injury History</h2>
+              <p className="text-slate-400 max-w-lg mx-auto relative z-10">This Universal AI does not use fixed logic. It dynamically extracts recovery metrics, load tolerances, and movement factors based entirely on the specific injury profile.</p>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-              {Object.keys(UNIVERSAL_INJURY_DATA).map(bp => (
-                <button
-                  key={bp}
-                  onClick={() => setSelectedBodyPart(bp)}
-                  className={`p-4 rounded-2xl border transition-all flex flex-col items-center gap-3 ${
-                    selectedBodyPart === bp 
-                      ? 'bg-indigo-600 border-indigo-500 text-white shadow-[0_0_20px_rgba(99,102,241,0.4)]' 
-                      : 'bg-slate-900 border-slate-800 text-slate-400 hover:bg-slate-800 hover:text-slate-200'
-                  }`}
-                >
-                  <ActivitySquare className={`w-6 h-6 ${selectedBodyPart === bp ? 'text-indigo-200' : 'text-slate-500'}`} />
-                  <span className="font-bold text-sm">{bp}</span>
-                </button>
-              ))}
-            </div>
+            <motion.div variants={containerVariants} initial="hidden" animate="show" className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+              {Object.keys(UNIVERSAL_INJURY_DATA).map(bp => {
+                const isSelected = selectedBodyPart === bp;
+                const itemTheme = COLOR_MAP[bp] || DEFAULT_THEME;
+                return (
+                  <motion.button
+                    variants={itemVariants}
+                    whileHover={{ scale: isSelected ? 1.05 : 1.02, y: isSelected ? 0 : -4 }}
+                    whileTap={{ scale: 0.95 }}
+                    key={bp}
+                    onClick={() => setSelectedBodyPart(bp)}
+                    className={`p-5 rounded-2xl border transition-all duration-500 flex flex-col items-center gap-3 relative overflow-hidden ${
+                      isSelected 
+                        ? `bg-gradient-to-b ${itemTheme.bg} ${itemTheme.border} text-white shadow-[0_10px_30px_rgba(0,0,0,0.5)] z-10` 
+                        : 'bg-gradient-to-b from-slate-800 to-slate-900 border-t-slate-700 border-slate-800 border-b-black text-slate-400 shadow-lg'
+                    }`}
+                  >
+                    {isSelected && <div className={`absolute inset-0 ${itemTheme.glow} opacity-20 blur-xl animate-pulse`}></div>}
+                    <ActivitySquare className={`w-6 h-6 transition-colors duration-300 ${isSelected ? 'text-white' : 'text-slate-500'}`} />
+                    <span className="font-bold text-sm relative z-10">{bp}</span>
+                  </motion.button>
+                );
+              })}
+            </motion.div>
 
-            <button 
+            <motion.button 
+              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}
               onClick={startScan}
               disabled={!selectedBodyPart}
-              className="w-full py-5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:hover:bg-indigo-600 text-white rounded-2xl font-black uppercase tracking-widest transition-all flex items-center justify-center gap-3 shadow-xl"
+              className={`w-full py-6 bg-gradient-to-b ${theme.bg} disabled:opacity-50 disabled:grayscale text-white rounded-3xl font-black uppercase tracking-widest transition-all duration-700 flex items-center justify-center gap-3 shadow-[0_15px_40px_rgba(0,0,0,0.4)] border-t ${theme.border}`}
             >
               <Scan className="w-5 h-5" /> Initialize Universal Scan
-            </button>
+            </motion.button>
           </motion.div>
         )}
 
@@ -191,25 +228,31 @@ export default function ReinjuryScanner({ onBack }: { onBack: () => void }) {
             className="min-h-[500px] flex flex-col items-center justify-center space-y-12"
           >
             <div className="relative">
-              <div className="absolute inset-0 bg-indigo-500 rounded-full animate-ping opacity-20 blur-xl"></div>
-              <div className="w-32 h-32 bg-slate-900 border-4 border-indigo-500/30 rounded-full flex items-center justify-center relative z-10 overflow-hidden">
-                <Brain className="w-12 h-12 text-indigo-500 animate-pulse" />
+              <div className={`absolute inset-0 ${theme.glow} rounded-full animate-ping opacity-20 blur-xl transition-colors duration-1000`}></div>
+              <div className={`w-32 h-32 bg-slate-900 border-4 ${theme.border} border-opacity-30 rounded-full flex items-center justify-center relative z-10 overflow-hidden transition-colors duration-1000`}>
+                <Brain className={`w-12 h-12 animate-pulse transition-colors duration-1000 ${theme.text}`} />
                 <div 
-                  className="absolute bottom-0 left-0 right-0 bg-indigo-500/20 transition-all duration-300"
+                  className={`absolute bottom-0 left-0 right-0 ${theme.glow} opacity-20 transition-all duration-300`}
                   style={{ height: `${scanProgress}%` }}
                 />
               </div>
             </div>
 
             <div className="text-center space-y-4 w-full max-w-md">
-              <h3 className="text-2xl font-black italic text-slate-100 uppercase tracking-widest">{scanText}</h3>
-              <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
+              <motion.h3 
+                key={scanText}
+                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                className="text-2xl font-black italic text-slate-100 uppercase tracking-widest drop-shadow-md"
+              >
+                {scanText}
+              </motion.h3>
+              <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden shadow-inner">
                 <div 
-                  className="h-full bg-indigo-500 transition-all duration-300 shadow-[0_0_10px_rgba(99,102,241,1)]"
+                  className={`h-full bg-gradient-to-r ${theme.bg} transition-all duration-300 shadow-[0_0_15px_currentColor]`}
                   style={{ width: `${scanProgress}%` }}
                 />
               </div>
-              <p className="mono-label !text-indigo-400">Deep Extraction Protocol Running</p>
+              <p className={`mono-label transition-colors duration-1000 ${theme.text}`}>Deep Extraction Protocol Running</p>
             </div>
           </motion.div>
         )}
@@ -220,75 +263,82 @@ export default function ReinjuryScanner({ onBack }: { onBack: () => void }) {
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} 
             className="space-y-6"
           >
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl flex flex-col justify-center items-center text-center gap-2 relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-4 opacity-10"><Activity className="w-24 h-24" /></div>
-                <p className="text-xs font-black uppercase tracking-widest text-slate-500">Universal Score</p>
-                <p className="text-6xl font-black italic text-slate-100">{recoveryScore}<span className="text-3xl text-slate-500">%</span></p>
-              </div>
+            <motion.div variants={containerVariants} initial="hidden" animate="show" className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <motion.div variants={itemVariants} className="bg-gradient-to-b from-slate-800 to-slate-900 border border-t-slate-700 border-slate-800 border-b-black p-8 rounded-[2rem] flex flex-col justify-center items-center text-center gap-2 relative overflow-hidden shadow-2xl shadow-black/50 group hover:-translate-y-2 transition-transform duration-500">
+                <div className={`absolute top-0 right-0 p-4 opacity-5 transition-colors duration-500 ${theme.text}`}><Activity className="w-32 h-32" /></div>
+                <p className="text-xs font-black uppercase tracking-widest text-slate-400 drop-shadow-md">Universal Score</p>
+                <p className={`text-7xl font-black italic text-slate-100 drop-shadow-[0_0_20px_currentColor] transition-colors duration-500 ${theme.text}`}>{recoveryScore}<span className="text-3xl opacity-50">%</span></p>
+              </motion.div>
 
-              <div className={`border p-6 rounded-3xl flex flex-col justify-center items-center text-center gap-2 relative overflow-hidden ${
-                riskLevel === 'High' ? 'bg-red-500/10 border-red-500/30' : 
-                riskLevel === 'Moderate' ? 'bg-amber-500/10 border-amber-500/30' : 
-                'bg-emerald-500/10 border-emerald-500/30'
+              <motion.div variants={itemVariants} className={`border p-8 rounded-[2rem] flex flex-col justify-center items-center text-center gap-2 relative overflow-hidden shadow-2xl group hover:-translate-y-2 transition-all duration-500 ${
+                riskLevel === 'High' ? 'bg-gradient-to-b from-red-900/40 to-slate-900 border-t-red-500/50 border-red-500/20 shadow-red-900/20' : 
+                riskLevel === 'Moderate' ? 'bg-gradient-to-b from-amber-900/40 to-slate-900 border-t-amber-500/50 border-amber-500/20 shadow-amber-900/20' : 
+                'bg-gradient-to-b from-emerald-900/40 to-slate-900 border-t-emerald-500/50 border-emerald-500/20 shadow-emerald-900/20'
               }`}>
-                <ShieldAlert className={`w-8 h-8 mb-2 ${
+                <ShieldAlert className={`w-10 h-10 mb-2 drop-shadow-[0_0_15px_currentColor] transition-colors duration-500 ${
                   riskLevel === 'High' ? 'text-red-500' : riskLevel === 'Moderate' ? 'text-amber-500' : 'text-emerald-500'
                 }`} />
-                <p className="text-xs font-black uppercase tracking-widest text-slate-500">Reinjury Risk</p>
-                <p className={`text-4xl font-black uppercase italic ${
+                <p className="text-xs font-black uppercase tracking-widest text-slate-400">Reinjury Risk</p>
+                <p className={`text-5xl font-black uppercase italic drop-shadow-[0_0_15px_currentColor] transition-colors duration-500 ${
                   riskLevel === 'High' ? 'text-red-500' : riskLevel === 'Moderate' ? 'text-amber-500' : 'text-emerald-500'
                 }`}>{riskLevel}</p>
-              </div>
+              </motion.div>
 
-              <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl flex flex-col justify-center items-center text-center gap-2">
-                <p className="text-xs font-black uppercase tracking-widest text-slate-500">Load Capacity Tolerance</p>
-                <div className="w-full flex items-end justify-center gap-2 mb-2">
-                  <span className="text-5xl font-black italic text-indigo-400">{loadTolerance}</span>
-                  <span className="text-xl font-bold text-slate-500 mb-1">%</span>
+              <motion.div variants={itemVariants} className="bg-gradient-to-b from-slate-800 to-slate-900 border border-t-slate-700 border-slate-800 border-b-black p-8 rounded-[2rem] flex flex-col justify-center items-center text-center gap-2 shadow-2xl shadow-black/50 group hover:-translate-y-2 transition-transform duration-500">
+                <p className="text-xs font-black uppercase tracking-widest text-slate-400">Load Capacity Tolerance</p>
+                <div className="w-full flex items-end justify-center gap-2 mb-4">
+                  <span className={`text-6xl font-black italic drop-shadow-[0_0_20px_currentColor] transition-colors duration-500 ${theme.text}`}>{loadTolerance}</span>
+                  <span className="text-2xl font-bold text-slate-500 mb-2">%</span>
                 </div>
-                <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
-                  <div className="h-full bg-indigo-500" style={{ width: `${loadTolerance}%` }} />
+                <div className="w-full h-2 bg-slate-950 rounded-full overflow-hidden border border-slate-800 shadow-[inset_0_2px_4px_rgba(0,0,0,0.5)]">
+                  <div className={`h-full bg-gradient-to-r ${theme.bg} relative transition-all duration-1000`} style={{ width: `${loadTolerance}%` }}>
+                     <div className="absolute inset-0 bg-[linear-gradient(to_right,transparent,rgba(255,255,255,0.3))]"></div>
+                  </div>
                 </div>
-              </div>
-            </div>
+              </motion.div>
+            </motion.div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-slate-900 border border-slate-800 p-6 rounded-3xl space-y-4">
-                <h3 className="text-sm font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                  <Scan className="w-4 h-4" /> Dynamic Features Extracted
+            <motion.div variants={containerVariants} initial="hidden" animate="show" className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <motion.div variants={itemVariants} className="bg-gradient-to-b from-slate-800 to-slate-900 border border-t-slate-700 border-slate-800 border-b-black p-8 rounded-[2rem] space-y-5 shadow-2xl">
+                <h3 className={`text-sm font-black uppercase tracking-widest flex items-center gap-2 transition-colors duration-500 ${theme.text}`}>
+                  <Scan className="w-5 h-5 drop-shadow-[0_0_10px_currentColor]" /> Dynamic Features Extracted
                 </h3>
-                <ul className="space-y-3">
+                <ul className="space-y-4">
                   {data.factors.map((f: string, i: number) => (
-                    <li key={i} className="flex items-start gap-3">
-                      <div className="w-5 h-5 rounded-full bg-slate-800 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <CheckCircle2 className="w-3 h-3 text-indigo-400" />
+                    <motion.li 
+                      initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.1 }}
+                      key={i} className="flex items-start gap-4 p-3 bg-slate-900/50 rounded-xl border border-slate-800"
+                    >
+                      <div className={`w-8 h-8 rounded-full ${theme.bg} flex items-center justify-center flex-shrink-0 mt-0.5 shadow-lg`}>
+                        <CheckCircle2 className="w-4 h-4 text-white" />
                       </div>
                       <div>
                         <p className="text-sm font-bold text-slate-200 capitalize">{f}</p>
-                        <p className="text-xs text-slate-500 font-medium">Status: Recovering</p>
+                        <p className="text-xs text-slate-500 font-medium">Status: Quantifying</p>
                       </div>
-                    </li>
+                    </motion.li>
                   ))}
                 </ul>
-              </div>
+              </motion.div>
 
               <div className="space-y-6">
-                <div className="bg-red-500/10 border border-red-500/20 p-6 rounded-3xl">
-                  <h3 className="text-sm font-black uppercase tracking-widest text-red-400 flex items-center gap-2 mb-2">
-                    <ShieldAlert className="w-4 h-4" /> Return-to-Play Restrictions
+                <motion.div variants={itemVariants} className="bg-gradient-to-b from-red-900/20 to-slate-900 border-t border-t-red-500/30 border-red-500/10 p-8 rounded-[2rem] shadow-2xl relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/10 rounded-full blur-2xl"></div>
+                  <h3 className="text-sm font-black uppercase tracking-widest text-red-400 flex items-center gap-2 mb-3 relative">
+                    <ShieldAlert className="w-5 h-5 drop-shadow-[0_0_10px_rgba(239,68,68,0.8)]" /> Return-to-Play Restrictions
                   </h3>
-                  <p className="text-slate-200 font-medium leading-relaxed">{data.restrictions}</p>
-                </div>
+                  <p className="text-slate-200 font-medium leading-relaxed relative z-10 text-lg">{data.restrictions}</p>
+                </motion.div>
 
-                <div className="bg-emerald-500/10 border border-emerald-500/20 p-6 rounded-3xl">
-                  <h3 className="text-sm font-black uppercase tracking-widest text-emerald-400 flex items-center gap-2 mb-2">
-                    <Activity className="w-4 h-4" /> AI Recovery Recommendation
+                <motion.div variants={itemVariants} className="bg-gradient-to-b from-emerald-900/20 to-slate-900 border-t border-t-emerald-500/30 border-emerald-500/10 p-8 rounded-[2rem] shadow-2xl relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl"></div>
+                  <h3 className="text-sm font-black uppercase tracking-widest text-emerald-400 flex items-center gap-2 mb-3 relative">
+                    <Activity className="w-5 h-5 drop-shadow-[0_0_10px_rgba(16,185,129,0.8)]" /> AI Recovery Recommendation
                   </h3>
-                  <p className="text-slate-200 font-medium leading-relaxed">{data.recommendation}</p>
-                </div>
+                  <p className="text-slate-200 font-medium leading-relaxed relative z-10 text-lg">{data.recommendation}</p>
+                </motion.div>
               </div>
-            </div>
+            </motion.div>
 
             <button 
               onClick={() => setPhase('setup')}

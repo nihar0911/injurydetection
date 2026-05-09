@@ -30,10 +30,10 @@ const Login = () => {
         await signInWithEmail(email, password);
       }
     } catch (err: any) {
-      console.warn("Firebase Auth Failed (likely disabled). Falling back to Demo Mode.", err);
-      // Hackathon Fail-Safe: If the provided Firebase console config blocks email/password,
-      // we immediately seamlessly drop them into the working Demo Mode so they aren't blocked.
-      enableDemoMode();
+      console.warn("Firebase Auth Error:", err);
+      setError(err.message || "Failed to authenticate with database.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -63,9 +63,18 @@ const Login = () => {
         </div>
 
         {error && (
-          <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-xl text-red-400 text-sm font-bold flex items-center gap-3 text-left">
-            <AlertTriangle className="w-5 h-5 flex-shrink-0" />
-            {error}
+          <div className="bg-red-500/10 border border-red-500/20 p-4 rounded-xl text-red-400 text-sm font-bold flex flex-col gap-2 text-left shadow-lg">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="w-5 h-5 flex-shrink-0" />
+              <span>{error}</span>
+            </div>
+            <button 
+              type="button" 
+              onClick={enableDemoMode} 
+              className="mt-2 text-xs font-black uppercase tracking-widest text-indigo-400 hover:text-indigo-300 self-start px-2 py-1 bg-indigo-500/10 rounded-md transition-colors"
+            >
+              Enter Demo Mode Instantly
+            </button>
           </div>
         )}
 

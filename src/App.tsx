@@ -17,6 +17,12 @@ import UpgradeModal from './components/UpgradeModal';
 import { BodyPart, RecoveryPlan } from './types';
 import { motion, AnimatePresence } from 'motion/react';
 
+const pageVariants = {
+  initial: { opacity: 0, y: 40, filter: 'blur(15px)', scale: 0.95 },
+  animate: { opacity: 1, y: 0, filter: 'blur(0px)', scale: 1, transition: { type: 'spring', stiffness: 260, damping: 20 } },
+  exit: { opacity: 0, y: -40, filter: 'blur(15px)', scale: 1.05, transition: { duration: 0.3 } }
+};
+
 const AppContent = () => {
   const { user, profile, loading } = useAuth();
   const [view, setView] = useState<'home' | 'triage' | 'recovery' | 'ambulance' | 'reinjury'>('home');
@@ -46,10 +52,10 @@ const AppContent = () => {
         {view === 'home' && (
           <motion.div
             key="home"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            transition={{ duration: 0.3 }}
+            variants={pageVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
           >
             <Home 
               onStartTriage={(part) => {
@@ -73,10 +79,10 @@ const AppContent = () => {
         {view === 'triage' && selectedPart && (
           <motion.div
             key="triage"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 1.05 }}
-            transition={{ duration: 0.3 }}
+            variants={pageVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
           >
             <Triage 
               selectedPart={selectedPart} 
@@ -99,10 +105,10 @@ const AppContent = () => {
         {view === 'recovery' && activePlan && (
           <motion.div
             key="recovery"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
+            variants={pageVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
           >
             <Recovery 
               plan={activePlan} 
@@ -114,10 +120,10 @@ const AppContent = () => {
         {view === 'ambulance' && (
           <motion.div
             key="ambulance"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 1.05 }}
-            transition={{ duration: 0.3 }}
+            variants={pageVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
           >
             <AmbulanceTracker onBack={() => setView('home')} />
           </motion.div>
@@ -126,10 +132,10 @@ const AppContent = () => {
         {view === 'reinjury' && (
           <motion.div
             key="reinjury"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 1.05 }}
-            transition={{ duration: 0.3 }}
+            variants={pageVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
           >
             <ReinjuryScanner onBack={() => setView('home')} />
           </motion.div>

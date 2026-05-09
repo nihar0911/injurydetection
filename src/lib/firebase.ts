@@ -1,10 +1,19 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signInAnonymously, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
-import firebaseConfig from '../../firebase-applet-config.json';
+const firebaseConfig = {
+  apiKey: "AIzaSyDdYEncbK_pGEW-6MbxympL5KI1pGYhvdk",
+  authDomain: "atheletai.firebaseapp.com",
+  databaseURL: "https://atheletai-default-rtdb.firebaseio.com",
+  projectId: "atheletai",
+  storageBucket: "atheletai.firebasestorage.app",
+  messagingSenderId: "1006851054201",
+  appId: "1:1006851054201:web:588674a36129c3852052a8",
+  measurementId: "G-06WP2YCLXP"
+};
 
 const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+export const db = getFirestore(app);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 

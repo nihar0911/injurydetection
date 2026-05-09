@@ -51,10 +51,19 @@ const Home: React.FC<HomeProps> = ({ onStartTriage, onViewRecovery, onStartReinj
     ? ['Ankle Strapping Tape', 'Instant Cold Packs', 'Antiseptic Sprays', 'Sterile Gauze', 'Elastic Bandages']
     : ['Recovery Muscle Cream', 'Joint Support Sleeves', 'Hydration Salts', 'Blister Pads'];
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    show: { opacity: 1, transition: { staggerChildren: 0.15 } }
+  };
+  const itemVariants = {
+    hidden: { opacity: 0, y: 30, filter: 'blur(10px)' },
+    show: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { type: 'spring', stiffness: 300, damping: 24 } }
+  };
+
   return (
-    <div className="space-y-8 pb-12">
+    <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-8 pb-12">
       {/* Hero Welcome */}
-      <div className="flex items-center justify-between bg-slate-900 border border-slate-800 p-6 rounded-3xl relative overflow-hidden">
+      <motion.div variants={itemVariants} className="flex items-center justify-between bg-slate-900 border border-slate-800 p-6 rounded-3xl relative overflow-hidden">
         <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-3xl -mr-16 -mt-16" />
         <div className="relative">
            <div className="flex items-center gap-2">
@@ -87,10 +96,11 @@ const Home: React.FC<HomeProps> = ({ onStartTriage, onViewRecovery, onStartReinj
              </div>
            ))}
         </div>
-      </div>
+      </motion.div>
 
       {/* Universal Reinjury Scanner Banner */}
       <motion.button
+        variants={itemVariants}
         onClick={onStartReinjuryScanner}
         whileHover={{ scale: 1.01 }}
         whileTap={{ scale: 0.99 }}
@@ -116,7 +126,7 @@ const Home: React.FC<HomeProps> = ({ onStartTriage, onViewRecovery, onStartReinj
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Left Column: Body Map Focus */}
-        <div className="lg:col-span-5 space-y-6">
+        <motion.div variants={itemVariants} className="lg:col-span-5 space-y-6">
           <div className="glass-panel p-8 shadow-2xl flex flex-col items-center">
             <h3 className="mono-label mb-8 w-full text-center">Body Impact Map</h3>
             <BodyMap onPartClick={(part) => onStartTriage(part)} />
@@ -125,10 +135,10 @@ const Home: React.FC<HomeProps> = ({ onStartTriage, onViewRecovery, onStartReinj
               <p className="text-[10px] text-slate-500 uppercase tracking-widest mt-1">Instant contextual analysis</p>
             </div>
           </div>
-        </div>
+        </motion.div>
 
         {/* Right Column: Active Status & Gear */}
-        <div className="lg:col-span-7 space-y-8">
+        <motion.div variants={itemVariants} className="lg:col-span-7 space-y-8">
           {/* Active Recovery Notification */}
           <AnimatePresence>
             {activePlan && (
@@ -219,10 +229,10 @@ const Home: React.FC<HomeProps> = ({ onStartTriage, onViewRecovery, onStartReinj
                </div>
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
       <UpgradeModal isOpen={showUpgrade} onClose={() => setShowUpgrade(false)} />
-    </div>
+    </motion.div>
   );
 };
 
