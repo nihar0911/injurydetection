@@ -222,7 +222,9 @@ const VisualScan: React.FC<VisualScanProps> = ({ onComplete, selectedPart }) => 
                   }
                 } catch (err: any) {
                   console.error(err);
-                  // Allow fallback if it fails or key is missing
+                  setIsVerifyingAnatomy(false);
+                  setAnatomyError(`Verification Service Error: ${err.message}. Check your API Key or Network.`);
+                  return; // Halt process on error
                 }
                 setIsVerifyingAnatomy(false);
               }
@@ -316,7 +318,9 @@ const VisualScan: React.FC<VisualScanProps> = ({ onComplete, selectedPart }) => 
                 }
               } catch (err: any) {
                 console.error(err);
-                // Allow fallback if it fails
+                setIsVerifyingAnatomy(false);
+                setAnatomyError(`Verification Service Error: ${err.message}. Check your API Key.`);
+                return;
               }
               setIsVerifyingAnatomy(false);
             }
@@ -404,6 +408,9 @@ const VisualScan: React.FC<VisualScanProps> = ({ onComplete, selectedPart }) => 
                   }
                 } catch (err: any) {
                   console.error(err);
+                  setIsVerifyingAnatomy(false);
+                  setAnatomyError(`Verification Service Error: ${err.message}. Check your API Key.`);
+                  return;
                 }
                 setIsVerifyingAnatomy(false);
               }

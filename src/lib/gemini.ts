@@ -39,7 +39,10 @@ export const verifyAnatomy = async (imageBase64: string, expectedPart: string): 
       }
     });
 
-    const result = JSON.parse(response.text() || "{}");
+    let rawText = response.text() || "{}";
+    rawText = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+    
+    const result = JSON.parse(rawText);
     return {
       match: result.match === true,
       reason: result.reason || "Verification completed."
