@@ -87,7 +87,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
       if (user) {
-        await refreshProfile();
+        try {
+          await refreshProfile();
+        } catch (err) {
+          console.error("Profile refresh failed:", err);
+          // Don't leave them in an empty state if it's a transient error, but we must finish loading
+        }
       } else {
         setProfile(null);
       }
