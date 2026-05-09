@@ -31,9 +31,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       displayName: 'Pro Athlete', 
       sports: ['Football', 'Running'],
       pastInjuries: 'None',
-      createdAt: new Date(),
-      tier: 'pro', 
-      scansCount: 0 
+      createdAt: new Date()
     });
     setLoading(false);
   };
@@ -76,9 +74,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         displayName: 'Pro Athlete', 
         sports: ['Football', 'Running'],
         pastInjuries: 'None',
-        createdAt: new Date(),
-        tier: 'pro', 
-        scansCount: 0 
+        createdAt: new Date()
       });
       setLoading(false);
       return;

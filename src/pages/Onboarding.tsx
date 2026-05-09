@@ -28,8 +28,6 @@ const Onboarding = () => {
         displayName: user.displayName || 'Athlete',
         sports,
         pastInjuries,
-        tier: 'free',
-        scansCount: 0,
         createdAt: serverTimestamp(),
       });
       await refreshProfile();

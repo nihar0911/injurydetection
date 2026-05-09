@@ -13,7 +13,6 @@ import Triage from './pages/Triage';
 import Recovery from './pages/Recovery';
 import AmbulanceTracker from './pages/AmbulanceTracker';
 import ReinjuryScanner from './pages/ReinjuryScanner';
-import UpgradeModal from './components/UpgradeModal';
 import { BodyPart, RecoveryPlan } from './types';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -28,7 +27,6 @@ const AppContent = () => {
   const [view, setView] = useState<'home' | 'triage' | 'recovery' | 'ambulance' | 'reinjury'>('home');
   const [selectedPart, setSelectedPart] = useState<BodyPart | null>(null);
   const [activePlan, setActivePlan] = useState<RecoveryPlan | null>(null);
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   if (loading) {
     return (
@@ -63,16 +61,11 @@ const AppContent = () => {
                 setView('triage');
               }} 
               onViewRecovery={(plan) => {
-                if (profile?.tier === 'pro') {
-                  setActivePlan(plan);
-                  setView('recovery');
-                } else {
-                  setShowUpgradeModal(true);
-                }
+                setActivePlan(plan);
+                setView('recovery');
               }}
               onStartReinjuryScanner={() => setView('reinjury')}
             />
-            <UpgradeModal isOpen={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />
           </motion.div>
         )}
 
@@ -88,14 +81,8 @@ const AppContent = () => {
               selectedPart={selectedPart} 
               onBack={() => setView('home')} 
               onPlanGenerated={(plan) => {
-                if (profile?.tier === 'pro') {
-                  setActivePlan(plan);
-                  setView('recovery');
-                } else {
-                  // For free users, they stay on Home but can see the notification for the triage result
-                  // But we don't let them open the planner.
-                  setView('home');
-                }
+                setActivePlan(plan);
+                setView('recovery');
               }}
               onCallAmbulance={() => setView('ambulance')}
             />

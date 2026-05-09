@@ -8,7 +8,6 @@ import { collection, addDoc, serverTimestamp, doc, updateDoc, increment } from '
 import { Activity, Thermometer, Droplets, ArrowLeft, Send, MessageSquare } from 'lucide-react';
 import { motion } from 'motion/react';
 import { handleFirestoreError, OperationType } from '../lib/firestore-errors';
-import UpgradeModal from '../components/UpgradeModal';
 import { getSymptomsForPart } from '../data/symptomsMapping';
 import { findMatchingCondition } from '../data/injuryDatabase';
 
@@ -21,7 +20,6 @@ interface TriageProps {
 
 const Triage: React.FC<TriageProps> = ({ selectedPart, onBack, onPlanGenerated, onCallAmbulance }) => {
   const { profile, user, refreshProfile } = useAuth();
-  const [showUpgrade, setShowUpgrade] = useState(false);
   const [step, setStep] = useState<'symptoms' | 'followup' | 'vitals' | 'scan' | 'analyzing' | 'result'>('symptoms');
   
   const [symptomOptions, setSymptomOptions] = useState<string[]>([]);
@@ -63,14 +61,6 @@ const Triage: React.FC<TriageProps> = ({ selectedPart, onBack, onPlanGenerated, 
     setFollowupAnswers(prev => ({ ...prev, [qId]: answer }));
   };
 
-  const checkGating = () => {
-    if (profile?.tier === 'free' && (profile?.scansCount || 0) >= 1) {
-      setShowUpgrade(true);
-      return false;
-    }
-    return true;
-  };
-
   const runAnalysis = async (scanData: ScanData) => {
     setStep('analyzing');
     
@@ -102,9 +92,7 @@ const Triage: React.FC<TriageProps> = ({ selectedPart, onBack, onPlanGenerated, 
         ];
 
         // Slice the plan: Pro users get all 30 days, Free users get only the first 7 days.
-        const tierAllowedSteps = profile?.tier === 'pro' 
-          ? matchedCondition.recoverySteps 
-          : matchedCondition.recoverySteps.slice(0, 7);
+        const tierAllowedSteps = matchedCondition.recoverySteps;
 
         const finalResult = {
           diagnosis: matchedCondition.condition,
@@ -153,10 +141,6 @@ const Triage: React.FC<TriageProps> = ({ selectedPart, onBack, onPlanGenerated, 
             setTriageResult({ ...finalResult, firebasePlanId: planRef.id });
           }
 
-          if (profile?.tier === 'free') {
-            await updateDoc(doc(db, 'profiles', user.uid), { scansCount: increment(1) });
-            await refreshProfile();
-          }
         }
 
         setStep('result');
@@ -249,7 +233,7 @@ const Triage: React.FC<TriageProps> = ({ selectedPart, onBack, onPlanGenerated, 
 
            <button 
              disabled={Object.keys(followupAnswers).length !== followupQuestions.length}
-             onClick={() => checkGating() && setStep('vitals')}
+             onClick={() => setStep('vitals')}
              className="w-full py-5 bg-indigo-600 text-white rounded-2xl font-bold italic tracking-tighter uppercase text-xl shadow-2xl shadow-indigo-600/30 active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:active:scale-100"
            >
              Next <Send className="w-5 h-5" />
@@ -343,8 +327,7 @@ const Triage: React.FC<TriageProps> = ({ selectedPart, onBack, onPlanGenerated, 
         />
       )}
 
-      <UpgradeModal isOpen={showUpgrade} onClose={() => setShowUpgrade(false)} />
-    </div>
+          </div>
   );
 };
 

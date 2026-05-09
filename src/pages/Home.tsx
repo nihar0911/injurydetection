@@ -8,8 +8,6 @@ import { db } from '../lib/firebase';
 import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 import { handleFirestoreError, OperationType } from '../lib/firestore-errors';
 
-import UpgradeModal from '../components/UpgradeModal';
-
 interface HomeProps {
   onStartTriage: (part: BodyPart) => void;
   onViewRecovery: (plan: RecoveryPlan) => void;
@@ -20,7 +18,6 @@ const Home: React.FC<HomeProps> = ({ onStartTriage, onViewRecovery, onStartReinj
   const { profile, user } = useAuth();
   const [activePlan, setActivePlan] = useState<RecoveryPlan | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showUpgrade, setShowUpgrade] = useState(false);
 
   useEffect(() => {
     const fetchActivePlan = async () => {
@@ -70,22 +67,12 @@ const Home: React.FC<HomeProps> = ({ onStartTriage, onViewRecovery, onStartReinj
              <h1 className="text-3xl font-black italic tracking-tighter uppercase text-slate-100">
                Elite <span className="text-indigo-500">Readiness</span>
              </h1>
-             {profile?.tier === 'pro' ? (
-               <span className="px-2 py-0.5 bg-indigo-500 text-[10px] font-black uppercase tracking-widest rounded-full text-white">Pro</span>
-             ) : (
-               <button 
-                 onClick={() => setShowUpgrade(true)}
-                 className="px-2 py-0.5 bg-slate-800 border border-slate-700 text-[10px] font-black uppercase tracking-widest rounded-full text-slate-400 hover:text-indigo-400 transition-colors"
-               >
-                 Go Pro
-               </button>
-             )}
            </div>
            <p className="mono-label flex items-center gap-2 mt-1">
              <Activity className="w-3 h-3 text-indigo-400" />
              {profile?.displayName} • 
              <span className="text-slate-500 ml-1">
-               {profile?.tier === 'free' ? `${1 - (profile?.scansCount || 0)} Scans Left` : 'Unlimited Analysis'}
+               Unlimited Analysis
              </span>
            </p>
         </div>
@@ -231,7 +218,6 @@ const Home: React.FC<HomeProps> = ({ onStartTriage, onViewRecovery, onStartReinj
           </div>
         </motion.div>
       </div>
-      <UpgradeModal isOpen={showUpgrade} onClose={() => setShowUpgrade(false)} />
     </motion.div>
   );
 };
