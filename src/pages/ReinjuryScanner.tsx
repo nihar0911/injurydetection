@@ -114,7 +114,7 @@ export default function ReinjuryScanner({ onBack }: { onBack: () => void }) {
   const { user } = useAuth();
   const [phase, setPhase] = useState<'setup' | 'scanning' | 'results'>('setup');
   const [selectedBodyPart, setSelectedBodyPart] = useState<string>('');
-  const [allowedParts, setAllowedParts] = useState<string[]>([]);
+  const [activeInjuries, setActiveInjuries] = useState<any[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
 
   useEffect(() => {
@@ -123,20 +123,32 @@ export default function ReinjuryScanner({ onBack }: { onBack: () => void }) {
       try {
         const q = query(collection(db, 'injuries'), where('userId', '==', user.uid));
         const snapshot = await getDocs(q);
-        const mapped = new Set<string>();
+        const injuriesList: any[] = [];
+        const seen = new Set<string>();
+
         snapshot.forEach(doc => {
           const data = doc.data();
           const area = data.area;
           const diagnosis = data.triageResult?.diagnosis;
           const categories = mapRawAreaToCategories(area, diagnosis);
-          if (categories.length > 0) {
-            categories.forEach(c => mapped.add(c));
-          } else {
-            mapped.add(area);
-          }
+          
+          categories.forEach(c => {
+            if (!seen.has(c)) {
+              seen.add(c);
+              injuriesList.push({
+                category: c,
+                originalArea: area,
+                severityScore: data.triageResult?.severityScore || 50,
+                riskLevel: data.triageResult?.riskLevel || 'medium',
+                visualSigns: data.visualSigns || [],
+                symptoms: data.symptoms || [],
+                plan: data.triageResult?.plan || [],
+                movementDecision: data.triageResult?.movementDecision || 'Avoid impact'
+              });
+            }
+          });
         });
-        // Always include Knee for hackathon safety if it's empty, or just let it be empty
-        setAllowedParts(Array.from(mapped));
+        setActiveInjuries(injuriesList);
       } catch (err) {
         console.error(err);
       } finally {
@@ -189,17 +201,28 @@ export default function ReinjuryScanner({ onBack }: { onBack: () => void }) {
   };
 
   const generateResults = () => {
-    // Generate deterministic but dynamic looking numbers based on body part length
-    const baseScore = 40 + (selectedBodyPart.length * 5) % 40; 
-    setRecoveryScore(baseScore);
-    setLoadTolerance(baseScore - 15);
-    
-    if (baseScore > 75) setRiskLevel('Low');
-    else if (baseScore > 50) setRiskLevel('Moderate');
-    else setRiskLevel('High');
+    const selectedData = activeInjuries.find(i => i.category === selectedBodyPart);
+    if (selectedData) {
+      const score = Math.max(10, 100 - selectedData.severityScore);
+      setRecoveryScore(score);
+      setLoadTolerance(Math.max(5, score - 15));
+      
+      const r = selectedData.riskLevel;
+      if (r === 'emergency' || r === 'high') setRiskLevel('High');
+      else if (r === 'medium') setRiskLevel('Moderate');
+      else setRiskLevel('Low');
+    } else {
+      const baseScore = 40 + (selectedBodyPart.length * 5) % 40; 
+      setRecoveryScore(baseScore);
+      setLoadTolerance(baseScore - 15);
+      if (baseScore > 75) setRiskLevel('Low');
+      else if (baseScore > 50) setRiskLevel('Moderate');
+      else setRiskLevel('High');
+    }
   };
 
   const data = UNIVERSAL_INJURY_DATA[selectedBodyPart];
+  const userInjuryData = activeInjuries.find(i => i.category === selectedBodyPart);
   const theme = COLOR_MAP[selectedBodyPart] || DEFAULT_THEME;
 
   const containerVariants = {
@@ -242,7 +265,7 @@ export default function ReinjuryScanner({ onBack }: { onBack: () => void }) {
 
             {loadingHistory ? (
               <div className="py-12 flex justify-center"><div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" /></div>
-            ) : allowedParts.length === 0 ? (
+            ) : activeInjuries.length === 0 ? (
               <div className="bg-slate-900 border border-slate-800 p-8 rounded-[2rem] text-center space-y-4">
                 <ShieldAlert className="w-12 h-12 text-slate-600 mx-auto" />
                 <h3 className="text-xl font-bold text-slate-300">No Past Injuries Found</h3>
@@ -250,7 +273,9 @@ export default function ReinjuryScanner({ onBack }: { onBack: () => void }) {
               </div>
             ) : (
               <motion.div variants={containerVariants} initial="hidden" animate="show" className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                {allowedParts.filter(bp => UNIVERSAL_INJURY_DATA[bp]).map(bp => {
+                {activeInjuries.map(injury => {
+                  const bp = injury.category;
+                  if (!UNIVERSAL_INJURY_DATA[bp]) return null;
                   const isSelected = selectedBodyPart === bp;
                   const itemTheme = COLOR_MAP[bp] || DEFAULT_THEME;
                 return (
@@ -369,7 +394,7 @@ export default function ReinjuryScanner({ onBack }: { onBack: () => void }) {
                   <Scan className="w-5 h-5 drop-shadow-[0_0_10px_currentColor]" /> Dynamic Features Extracted
                 </h3>
                 <ul className="space-y-4">
-                  {data.factors.map((f: string, i: number) => (
+                  {(userInjuryData ? [...userInjuryData.visualSigns, ...userInjuryData.symptoms] : data.factors).slice(0, 5).map((f: string, i: number) => (
                     <motion.li 
                       initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.1 }}
                       key={i} className="flex items-start gap-4 p-3 bg-slate-900/50 rounded-xl border border-slate-800"
@@ -379,7 +404,7 @@ export default function ReinjuryScanner({ onBack }: { onBack: () => void }) {
                       </div>
                       <div>
                         <p className="text-sm font-bold text-slate-200 capitalize">{f}</p>
-                        <p className="text-xs text-slate-500 font-medium">Status: Quantifying</p>
+                        <p className="text-xs text-slate-500 font-medium">Status: Quantifying Extract</p>
                       </div>
                     </motion.li>
                   ))}
@@ -392,7 +417,9 @@ export default function ReinjuryScanner({ onBack }: { onBack: () => void }) {
                   <h3 className="text-sm font-black uppercase tracking-widest text-red-400 flex items-center gap-2 mb-3 relative">
                     <ShieldAlert className="w-5 h-5 drop-shadow-[0_0_10px_rgba(239,68,68,0.8)]" /> Return-to-Play Restrictions
                   </h3>
-                  <p className="text-slate-200 font-medium leading-relaxed relative z-10 text-lg">{data.restrictions}</p>
+                  <p className="text-slate-200 font-medium leading-relaxed relative z-10 text-lg">
+                    {userInjuryData?.movementDecision || data.restrictions}
+                  </p>
                 </motion.div>
 
                 <motion.div variants={itemVariants} className="bg-gradient-to-b from-emerald-900/20 to-slate-900 border-t border-t-emerald-500/30 border-emerald-500/10 p-8 rounded-[2rem] shadow-2xl relative overflow-hidden">
@@ -400,7 +427,9 @@ export default function ReinjuryScanner({ onBack }: { onBack: () => void }) {
                   <h3 className="text-sm font-black uppercase tracking-widest text-emerald-400 flex items-center gap-2 mb-3 relative">
                     <Activity className="w-5 h-5 drop-shadow-[0_0_10px_rgba(16,185,129,0.8)]" /> AI Recovery Recommendation
                   </h3>
-                  <p className="text-slate-200 font-medium leading-relaxed relative z-10 text-lg">{data.recommendation}</p>
+                  <p className="text-slate-200 font-medium leading-relaxed relative z-10 text-lg">
+                    {userInjuryData?.plan?.[0] || data.recommendation}
+                  </p>
                 </motion.div>
               </div>
             </motion.div>
