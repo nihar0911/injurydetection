@@ -449,7 +449,7 @@ const VisualScan: React.FC<VisualScanProps> = ({ onComplete, selectedPart }) => 
           >
             <AlertTriangle className="text-red-400 w-5 h-5 flex-shrink-0 mt-0.5" />
             <div className="space-y-1">
-               <p className="text-sm text-red-200 font-bold">Image Verification Failed</p>
+               <p className="text-sm text-red-200 font-bold">Wrong Image Doesn't Match</p>
                <p className="text-sm text-red-300/80 font-medium leading-relaxed">{anatomyError}</p>
             </div>
           </motion.div>
